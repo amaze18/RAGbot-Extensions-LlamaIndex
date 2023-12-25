@@ -56,4 +56,3 @@ elasticsearch
 elasticsearch_dsl
 luqum
 unstructured[all-docs]
-Spire.Doc
