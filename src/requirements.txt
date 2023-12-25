@@ -20,9 +20,6 @@ requests
 ffmpeg-python
 mutagen
 python-docx
-audio-recorder-streamlit
-SpeechRecognition
-streamlit-audiorecorder
 pandas
 numpy
 html-parser
@@ -42,9 +39,6 @@ keybert[spacy]
 keybert[use]
 htbuilder
 gtts
-soundfile
-pydub
-audiorecorder
 PyMuPDF
 unidecode
 arxiv==0.5.3
@@ -52,7 +46,4 @@ tex2py
 click
 dateparser
 expiringdict
-elasticsearch
-elasticsearch_dsl
-luqum
-unstructured[all-docs]
+
