@@ -12,6 +12,8 @@ RUN pip install -r requirements.txt
 # copy every content from the local file to the image
 COPY . /app
 
-HEALTHCHECK CMD curl --fail https://bits-pilani.up.railway.app/
+EXPOSE 8501
 
-ENTRYPOINT ["streamlit", "run", "main.py"," --server.address=https://bits-pilani.up.railway.app/"]
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+
+ENTRYPOINT ["streamlit", "run", "main.py"," --server.port=8501"," --server.address=0.0.0.0"]
