@@ -16,16 +16,4 @@
     "FLASK_ENV": "production",
     "FLASK_APP": "main.py"
   }
-  "postAttachCommand": {
-    "server": "streamlit run main.py --server.enableCORS false --server.enableXsrfProtection false"
-  },
-  "portsAttributes": {
-    "8501": {
-      "label": "Application",
-      "onAutoForward": "openPreview"
-    }
-  },
-  "forwardPorts": [
-    8501
-  ]
 }
