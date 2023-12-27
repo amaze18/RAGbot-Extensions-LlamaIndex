@@ -16,6 +16,16 @@
     "FLASK_ENV": "production",
     "FLASK_APP": "main.py"
   }
-  "deploy"{
-    "startCommand": "streamlit run https://github.com/amaze18/BITSPilani/blob/main/main.py --server.address https://bits-pilani.up.railway.app/ --server.fileWatcherType none --browser.gatherUsageStats false"
+  "postAttachCommand": {
+    "server": "streamlit run main.py --server.enableCORS false --server.enableXsrfProtection false"
+  },
+  "portsAttributes": {
+    "8501": {
+      "label": "Application",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "forwardPorts": [
+    8501
+  ]
 }
