@@ -90,7 +90,7 @@ with st.sidebar:
     hf_email = 'anupam_purwar2019@pgp.isb.edu'
     hf_pass = 'PASS'
     st.markdown('📖 This app is hosted by I-Venture @ ISB [website](https://i-venture.org/)!')
-    image = Image.open('isbdlabs.jpg')
+    image = Image.open('Shark.jpg')
     st.image(image, caption=None, width=None, use_column_width=None, clamp=False, channels='RGB', output_format='auto')
 #
 
