@@ -16,4 +16,6 @@
     "FLASK_ENV": "production",
     "FLASK_APP": "main.py"
   }
+  "deploy"{
+    "startCommand": "streamlit run https://github.com/amaze18/BITSPilani/blob/main/main.py --server.address https://bits-pilani.up.railway.app/ --server.fileWatcherType none --browser.gatherUsageStats false"
 }
