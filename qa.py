@@ -218,9 +218,8 @@ openai.api_key = SECRET_TOKEN
 # Please check rate limit guide to learn more on how to handle this: https://platform.openai.com/docs/guides/rate-limits
 
 df['embeddings'] = df.text.apply(lambda x: openai.Embedding.create(input=x, engine='text-embedding-ada-002')['data'][0]['embedding'])
-#df.to_csv('processed/embeddings.csv')
 df.to_csv('embeddings.csv')
-#print(df.head())
+
 
 """# QnA"""
 
@@ -288,10 +287,7 @@ def answer_question(
    stop_sequence=None
    context = create_context(
        question,
-       df,
-   #    max_len=max_len,
-    #   size=size,
-   )
+       df,)
    # If debug, print the raw model response
    if debug:
        print("Context:\n" + context)
@@ -306,6 +302,45 @@ def answer_question(
    ]
 
    try:
+      open_source=0
+      
+      
+      # code for opensource LLM
+      if open_source==1:
+          model_name = "sentence-transformers/all-mpnet-base-v2"
+          model_name = "sentence-transformers/LaBSE"
+          model_name= 'intfloat/e5-large-v2'
+          model_name = 'all-MiniLM-L6-v2'
+          model_name='google/flan-ul2'
+          model_name='google/flan-t5-large'
+          model_kwargs = {'device': 'cpu'}
+          encode_kwargs = {'normalize_embeddings': False}
+          hf = HuggingFaceEmbeddings(
+                     model_name=model_name,
+                     model_kwargs=model_kwargs,
+                     encode_kwargs=encode_kwargs
+                 )
+          #docs is documents that need to be converted to word embeddings
+          db = FAISS.from_documents(docs, hf)
+          retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 3} )
+          chunk_size = 2048
+          model_id="sentence-transformers/all-MiniLM-L6-v2"
+          model_id='digitous/Alpacino30b'
+          model_id="google/flan-t5-base"
+          model_id='tiiuae/falcon-40b'
+          model_id="google/flan-t5-large"
+          llm =  HuggingFacePipeline.from_model_id(model_id=model_name, task="text2text-generation", model_kwargs={"temperature":3e-1, "max_length" : chunk_size})
+          qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
+          res = qa(query)
+          answer, docs = res['result'], res['source_documents']
+          # Print the relevant sources used
+          doc_list=[]
+          for document in docs:
+                  
+                  metadata=document.metadata["source"]
+                  doc_list.append(document)
+
+
        response = openai.ChatCompletion.create(
         model='gpt-3.5-turbo',
        messages=messages,
