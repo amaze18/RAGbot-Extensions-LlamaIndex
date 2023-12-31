@@ -341,7 +341,7 @@ def answer_question(
                   doc_list.append(document)
 
 
-          response = openai.ChatCompletion.create(
+      response = openai.ChatCompletion.create(
           model='gpt-3.5-turbo',
        messages=messages,
         temperature=0.01,
