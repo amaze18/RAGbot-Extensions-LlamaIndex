@@ -303,8 +303,6 @@ def answer_question(
 
    try:
       open_source=0
-      
-      
       # code for opensource LLM
       if open_source==0:
           model_name = "sentence-transformers/all-mpnet-base-v2"
@@ -333,36 +331,23 @@ def answer_question(
           qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
           res = qa(query)
           answer, docs = res['result'], res['source_documents']
-          # Print the relevant sources used
+          # Get context from all the relevant sources used
           doc_list=[]
           for document in docs:
                   
                   metadata=document.metadata["source"]
                   doc_list.append(document)
+          return answer
 
-
-      response = openai.ChatCompletion.create(
-    model='gpt-3.5-turbo',
-    messages=messages,
-    temperature=0.01,
-    top_p=0.75,
-)
-
-ans = response["choices"][0]["message"]["content"]
-       # Create a completions using the questin and context
-
-       #response = openai.Completion.create(
-        #   prompt=f"Answer the question based on the context below, and if the question can't be answered based on the context, say \"I do not know\"\n\nContext: {context}\n\n---\n\nQuestion: {question}\nAnswer:",
-        #   temperature=0.08,
-        #   max_tokens=max_tokens,
-        #   top_p=0.75,
-        #   frequency_penalty=0,
-        #   presence_penalty=0,
-        #   stop=stop_sequence,
-        #   model=model,
-       #)
-
-       return ans #response["choices"][0]["text"].strip()
+      else:
+         response = openai.ChatCompletion.create(
+         model='gpt-3.5-turbo',
+             messages=messages,
+             temperature=0.01,
+             top_p=0.75)
+         ans = response["choices"][0]["message"]["content"]
+          # Create a completions using the questin and context
+         return ans #response["choices"][0]["text"].strip()
    except Exception as e:
        print(e)
        return ""
