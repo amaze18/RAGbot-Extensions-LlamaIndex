@@ -342,14 +342,13 @@ def answer_question(
 
 
       response = openai.ChatCompletion.create(
-          model='gpt-3.5-turbo',
-       messages=messages,
-        temperature=0.01,
-         top_p=0.75,
+    model='gpt-3.5-turbo',
+    messages=messages,
+    temperature=0.01,
+    top_p=0.75,
+)
 
-       )
-
-       ans=response["choices"][0]["message"]["content"]
+ans = response["choices"][0]["message"]["content"]
        # Create a completions using the questin and context
 
        #response = openai.Completion.create(
