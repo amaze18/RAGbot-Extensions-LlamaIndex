@@ -306,7 +306,7 @@ def answer_question(
       
       
       # code for opensource LLM
-      if open_source==1:
+      if open_source==0:
           model_name = "sentence-transformers/all-mpnet-base-v2"
           model_name = "sentence-transformers/LaBSE"
           model_name= 'intfloat/e5-large-v2'
