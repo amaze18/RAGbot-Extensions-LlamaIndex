@@ -16,6 +16,7 @@ sentencepiece
 transformers
 requests
 pandas
+InstructorEmbedding
 numpy
 html-parser
 regex
