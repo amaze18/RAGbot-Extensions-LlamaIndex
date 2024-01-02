@@ -225,7 +225,7 @@ SECRET_IN_ENV = True
 import os
 
 
-SECRET_TOKEN = "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"
+SECRET_TOKEN = os.environ["SECRET_TOKEN"] #{{ secrets.SECRET_KEY }}
 openai.api_key = SECRET_TOKEN
 
 # Note that you may run into rate limit issues depending on how many files you try to embed
