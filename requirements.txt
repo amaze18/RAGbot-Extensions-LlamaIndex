@@ -15,6 +15,7 @@ scipy
 sentencepiece
 transformers
 requests
+glob2
 pandas
 numpy
 html-parser
