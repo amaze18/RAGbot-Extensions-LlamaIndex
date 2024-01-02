@@ -46,7 +46,7 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain import HuggingFacePipeline
 import glob
-
+from langchain.vectorstores import FAISS
 def get_sitemap(url=sitemap_url):
    try:
        with urllib.request.urlopen(url) as response:
@@ -324,12 +324,13 @@ def answer_question(
                  )
           #docs is documents that need to be converted to word embeddings
           documents = []
-          a=glob.glob("*.csv")
+          a=glob.glob("scraped_files/processed/scraped.csv")
           for i in range(len(a)):
             documents.extend(CSVLoader(a[i]).load())
           chunk_size = 1024
-          text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=50)
-          texts = text_splitter.split_documents(documents)
+          text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=50) 
+          texts = text_splitter.split_documents(documents) 
+          
           db = Chroma.from_documents(texts, hf)
           
           retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 3} )
@@ -340,7 +341,7 @@ def answer_question(
           model_id='tiiuae/falcon-40b'
           model_id="google/flan-t5-small" #base
           
-          llm =  HuggingFacePipeline.from_model_id(model_id="google/flan-t5-small", task="text2text-generation", model_kwargs={"temperature":3e-1, "max_length" : chunk_size})
+          llm =  langchain.llms.huggingface_pipeline.HuggingFacePipeline.from_model_id(model_id="google/flan-t5-small", task="text2text-generation", model_kwargs={"max_length" : chunk_size})
           qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
           res = qa(question)
           answer, docs = res['result'], res['source_documents']
