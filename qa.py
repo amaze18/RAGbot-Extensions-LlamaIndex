@@ -16,11 +16,20 @@ Original file is located at
 domain = "i-venture.org"
 sitemap_url = "https://i-venture.org/sitemap.xml"
 full_url = "https://i-venture.org/"
-
 import os
-
 RESULTS_DIR = "scraped_files/"
 os.makedirs(RESULTS_DIR, exist_ok=True)
+import gradio as gr
+import random
+import time
+from dotenv import load_dotenv
+from langchain.chains import RetrievalQA
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.vectorstores import Chroma
+from langchain.llms import GPT4All, LlamaCpp
+from langchain.document_loaders import TextLoader, PDFMinerLoader, CSVLoader
+from langchain.text_splitter import CharacterTextSplitter
 import streamlit as st
 import requests
 import re
@@ -32,6 +41,11 @@ from urllib.parse import urlparse
 import os
 import pandas as pd
 import numpy as np
+import langchain
+from langchain.vectorstores import Chroma
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain import HuggingFacePipeline
+import glob
 
 def get_sitemap(url=sitemap_url):
    try:
@@ -123,7 +137,7 @@ from openai.embeddings_utils import distances_from_embeddings, cosine_similarity
 # Load the cl100k_base tokenizer which is designed to work with the ada-002 model
 tokenizer = tiktoken.get_encoding("cl100k_base")
 
-df = pd.read_csv(RESULTS_DIR + 'processed/scraped.csv', index_col=0)
+df = pd.read_csv('scraped_files/processed/scraped.csv', index_col=0)
 df.columns = ['title', 'text']
 
 # Tokenize the text and save the number of tokens to a new column
@@ -211,14 +225,17 @@ SECRET_IN_ENV = True
 import os
 
 
-SECRET_TOKEN = os.environ["SECRET_TOKEN"] #{{ secrets.SECRET_KEY }}
+SECRET_TOKEN = "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"
 openai.api_key = SECRET_TOKEN
 
 # Note that you may run into rate limit issues depending on how many files you try to embed
 # Please check rate limit guide to learn more on how to handle this: https://platform.openai.com/docs/guides/rate-limits
 
-df['embeddings'] = df.text.apply(lambda x: openai.Embedding.create(input=x, engine='text-embedding-ada-002')['data'][0]['embedding'])
-df.to_csv('embeddings.csv')
+#df['embeddings'] = df.text.apply(lambda x: openai.Embedding.create(input=x, engine='text-embedding-ada-002')['data'][0]['embedding'])
+
+
+
+
 
 
 """# QnA"""
@@ -229,13 +246,13 @@ from ast import literal_eval
 #st.write(df.head())
 #st.write("question::",question)
 
-df = pd.read_csv('embeddings.csv', index_col=0)
-df['embeddings'] = df['embeddings'].apply(literal_eval).apply(np.array)
+#df = pd.read_csv('embeddings.csv', index_col=0)
+#df['embeddings'] = df['embeddings'].apply(literal_eval).apply(np.array)
 
 
 def create_context(
    question, df
-):
+):   # pass opensource as argument
    """
    Create a context for a question by finding the most similar context from the dataframe
    """
@@ -244,7 +261,7 @@ def create_context(
    # Get the embeddings for the question
    # print("question::",question)
    #st.write(question)
-   q_embeddings = openai.Embedding.create(input=question, engine='text-embedding-ada-002')['data'][0]['embedding']
+   q_embeddings = openai.Embedding.create(input=question, engine='text-embedding-ada-002')['data'][0]['embedding'] #use open_source embedding
 
    # Get the distances from the embeddings
    df['distances'] = distances_from_embeddings(q_embeddings, df['embeddings'].values, distance_metric='cosine')
@@ -279,75 +296,86 @@ def answer_question(
    """
    Answer a question based on the most similar context from the dataframe texts
    """
+   open_source=0
    model="text-davinci-003"
    max_len=1800
    size="ada"
    debug=False
    max_tokens=250
    stop_sequence=None
-   context = create_context(
-       question,
-       df,)
-   # If debug, print the raw model response
-   if debug:
-       print("Context:\n" + context)
-       print("\n\n")
-   introduction = 'Use the below text to answer the subsequent question. If the answer cannot be found in the articles, write "I could not find an answer."'
-   question_ai = f"\n\nQuestion: {question}"
-   message = introduction
-   message = message + context + question_ai
-   messages = [
-       {"role": "system","content": "You are iVBot, an AI based chatbot assistant. You are friendly, proactive, factual and helpful, \
-       you answer from the context provided"}, {"role": "user", "content": message},
-   ]
-
    try:
       open_source=0
       # code for opensource LLM
       if open_source==0:
+
+
           model_name = "sentence-transformers/all-mpnet-base-v2"
           model_name = "sentence-transformers/LaBSE"
           model_name= 'intfloat/e5-large-v2'
           model_name = 'all-MiniLM-L6-v2'
           model_name='google/flan-ul2'
-          model_name='google/flan-t5-large'
+          model_name='google/flan-t5-small'
           model_kwargs = {'device': 'cpu'}
           encode_kwargs = {'normalize_embeddings': False}
           hf = HuggingFaceEmbeddings(
-                     model_name=model_name,
+                     model_name="sentence-transformers/all-mpnet-base-v2",
                      model_kwargs=model_kwargs,
                      encode_kwargs=encode_kwargs
                  )
           #docs is documents that need to be converted to word embeddings
-          db = FAISS.from_documents(docs, hf)
+          documents = []
+          a=glob.glob("*.csv")
+          for i in range(len(a)):
+            documents.extend(CSVLoader(a[i]).load())
+          chunk_size = 1024
+          text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=50)
+          texts = text_splitter.split_documents(documents)
+          db = Chroma.from_documents(texts, hf)
+          
           retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 3} )
           chunk_size = 2048
           model_id="sentence-transformers/all-MiniLM-L6-v2"
           model_id='digitous/Alpacino30b'
           model_id="google/flan-t5-base"
           model_id='tiiuae/falcon-40b'
-          model_id="google/flan-t5-large"
-          llm =  HuggingFacePipeline.from_model_id(model_id=model_name, task="text2text-generation", model_kwargs={"temperature":3e-1, "max_length" : chunk_size})
+          model_id="google/flan-t5-small" #base
+          
+          llm =  HuggingFacePipeline.from_model_id(model_id="google/flan-t5-small", task="text2text-generation", model_kwargs={"temperature":3e-1, "max_length" : chunk_size})
           qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
-          res = qa(query)
+          res = qa(question)
           answer, docs = res['result'], res['source_documents']
           # Get context from all the relevant sources used
           doc_list=[]
           for document in docs:
-                  
+
                   metadata=document.metadata["source"]
                   doc_list.append(document)
           return answer
 
       else:
+         context = create_context(
+             question,
+             df,)
+         # If debug, print the raw model response
+         if debug:
+             print("Context:\n" + context)
+             print("\n\n")
+         introduction = 'Use the below text to answer the subsequent question. If the answer cannot be found in the articles, write "I could not find an answer."'
+         question_ai = f"\n\nQuestion: {question}"
+         message = introduction
+         message = message + context + question_ai
+         messages = [
+             {"role": "system","content": "You are iVBot, an AI based chatbot assistant. You are friendly, proactive, factual and helpful, \
+             you answer from the context provided"}, {"role": "user", "content": message},
+         ]
          response = openai.ChatCompletion.create(
          model='gpt-3.5-turbo',
              messages=messages,
              temperature=0.01,
              top_p=0.75)
-         ans = response["choices"][0]["message"]["content"]
+         answer = response["choices"][0]["message"]["content"]
           # Create a completions using the questin and context
-         return ans #response["choices"][0]["text"].strip()
+         return answer #response["choices"][0]["text"].strip()
    except Exception as e:
        print(e)
-       return ""
+       return e
