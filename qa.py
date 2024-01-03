@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
+
 """ISB chatbot.ipynb
-
-
-
 Original file is located at
    https://colab.research.google.com/drive/1GYmsZSR4MWuvORNpSWFWrXz79lQKb6oc
 """
@@ -47,6 +44,10 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain import HuggingFacePipeline
 import glob
 from langchain.vectorstores import FAISS
+import os
+import openai
+from dotenv import load_dotenv
+#scraping data starts
 def get_sitemap(url=sitemap_url):
    try:
        with urllib.request.urlopen(url) as response:
@@ -127,10 +128,11 @@ def get_df():
    # Set the text column to be the raw text with the newlines removed
    df['text'] = df.fname + ". " + remove_newlines(df.text)
    return df
+#scraping data ends
 
-## Clean
+## Clean data for openai 
 
-
+#For openai embedding
 import tiktoken
 from openai.embeddings_utils import distances_from_embeddings, cosine_similarity
 
@@ -212,43 +214,9 @@ def shorten(df):
 df = shorten(df)
 df.n_tokens.hist()
 
-"""## Create embeds"""
-
-
-
-import openai
-from dotenv import load_dotenv
-load_dotenv()
-
-SECRET_IN_ENV = True
-
-import os
-
-
-SECRET_TOKEN = os.environ["SECRET_TOKEN"] #{{ secrets.SECRET_KEY }}
-openai.api_key = SECRET_TOKEN
-
-# Note that you may run into rate limit issues depending on how many files you try to embed
-# Please check rate limit guide to learn more on how to handle this: https://platform.openai.com/docs/guides/rate-limits
-
-#df['embeddings'] = df.text.apply(lambda x: openai.Embedding.create(input=x, engine='text-embedding-ada-002')['data'][0]['embedding'])
-
-
-
-
-
-
 """# QnA"""
 
 from ast import literal_eval
-
-#df = pd.read_csv('processed/embeddings.csv', index_col=0)
-#st.write(df.head())
-#st.write("question::",question)
-
-#df = pd.read_csv('embeddings.csv', index_col=0)
-#df['embeddings'] = df['embeddings'].apply(literal_eval).apply(np.array)
-
 
 def create_context(
    question, df
@@ -288,7 +256,7 @@ def create_context(
 
 def answer_question(
 
-   question,
+   question,df=df
 
 ):
 
@@ -304,7 +272,7 @@ def answer_question(
    max_tokens=250
    stop_sequence=None
    try:
-      open_source=0
+      open_source=1
       # code for opensource LLM
       if open_source==0:
 
@@ -328,11 +296,11 @@ def answer_question(
           for i in range(len(a)):
             documents.extend(CSVLoader(a[i]).load())
           chunk_size = 1024
-          text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=50) 
-          texts = text_splitter.split_documents(documents) 
-          
+          text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=50)
+          texts = text_splitter.split_documents(documents)
+
           db = Chroma.from_documents(texts, hf)
-          
+
           retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 3} )
           chunk_size = 2048
           model_id="sentence-transformers/all-MiniLM-L6-v2"
@@ -340,7 +308,7 @@ def answer_question(
           model_id="google/flan-t5-base"
           model_id='tiiuae/falcon-40b'
           model_id="google/flan-t5-small" #base
-          
+
           llm =  langchain.llms.huggingface_pipeline.HuggingFacePipeline.from_model_id(model_id="google/flan-t5-small", task="text2text-generation", model_kwargs={"max_length" : chunk_size})
           qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
           res = qa(question)
@@ -354,6 +322,16 @@ def answer_question(
           return answer
 
       else:
+         load_dotenv()
+         SECRET_IN_ENV = True
+         SECRET_TOKEN = os.environ['SECRET_TOKEN']
+         openai.api_key = SECRET_TOKEN
+       
+         #generate openai emebeddings
+         
+         df['embeddings'] = df.text.apply(lambda x: openai.Embedding.create(input=x, engine='text-embedding-ada-002')['data'][0]['embedding'])
+         df = pd.read_csv('embeddings.csv', index_col=0)
+         df['embeddings'] = df['embeddings'].apply(literal_eval).apply(np.array)
          context = create_context(
              question,
              df,)
