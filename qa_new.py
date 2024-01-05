@@ -228,7 +228,7 @@ def create_context(
    """
    Create a context for a question by finding the most similar context from the dataframe
    """
-   max_len=1800
+   max_len=5000
    size="ada"
    # Get the embeddings for the question
    # print("question::",question)
