@@ -38,10 +38,13 @@ for fn in os.listdir(text_folder_path):
             print(f"Failed to load {file_path} with encoding {encoding}")
 all_documents = []
 # List of suffixes to remove
-for loader in loaders:
-    raw_documents = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter()
-    documents = text_splitter.split_documents(raw_documents)
-    all_documents.extend(documents)
-embeddings = OpenAIEmbeddings()
-vectorstore = Chroma.from_documents(all_documents, embeddings)
+def get_answer(question):
+    for loader in loaders:
+        raw_documents = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter()
+        documents = text_splitter.split_documents(raw_documents)
+        all_documents.extend(documents)
+    embeddings = OpenAIEmbeddings()
+    db = Chroma.from_documents(all_documents, embeddings)
+    answer=db.similarity_search(question)
+    return answer
