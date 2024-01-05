@@ -9,7 +9,7 @@ from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
-text_folder_path = r"scraped_files\text"
+text_folder_path = r"scraped_files/text"
 print(os.listdir(text_folder_path))
 
 # Load multiple files
