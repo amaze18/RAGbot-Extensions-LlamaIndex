@@ -293,7 +293,7 @@ def answer_question(
                  )
           #docs is documents that need to be converted to word embeddings
           documents = []
-          a=glob.glob("scraped_files/processed/scraped.csv")
+          a=glob.glob("scraped_files/processed/scraped_new.csv")
           for i in range(len(a)):
             documents.extend(CSVLoader(a[i]).load())
           chunk_size = 1024
@@ -329,10 +329,6 @@ def answer_question(
          openai.api_key = SECRET_TOKEN
 
          #generate openai emebeddings
-
-         df['embeddings'] = df.text.apply(lambda x: openai.Embedding.create(input=x, engine='text-embedding-ada-002')['data'][0]['embedding'])
-         df = pd.read_csv('embeddings.csv', index_col=0)
-         df['embeddings'] = df['embeddings'].apply(literal_eval).apply(np.array)
          context = create_context(
              question,
              df,)
