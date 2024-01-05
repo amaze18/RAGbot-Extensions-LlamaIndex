@@ -1,7 +1,7 @@
 import openai
 import getpass
 import os
-SECRET_TOKEN = os.environ["OPENAI_API_KEY"] 
+SECRET_TOKEN = os.environ["SECRET_TOKEN"] 
 openai.api_key = SECRET_TOKEN
 
 #openai.api_key="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"
