@@ -4,14 +4,12 @@ import os
 SECRET_TOKEN = os.environ["SECRET_TOKEN"] 
 openai.api_key = SECRET_TOKEN
 
-#openai.api_key="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"
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
-text_folder_path = r"C:\Users\Kush Juvekar\Downloads\scraped_files_new\scraped_files\text"
+text_folder_path = r"scraped_files\text"
 print(os.listdir(text_folder_path))
 
 # Load multiple files
