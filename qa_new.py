@@ -218,9 +218,12 @@ df.n_tokens.hist()
 """# QnA"""
 
 from ast import literal_eval
-
+load_dotenv()
+SECRET_IN_ENV = True
+SECRET_TOKEN = os.environ['SECRET_TOKEN']
+openai.api_key = SECRET_TOKEN
 def create_context(
-   question, df
+   question, df=df
 ):   # pass opensource as argument
    """
    Create a context for a question by finding the most similar context from the dataframe
@@ -231,7 +234,8 @@ def create_context(
    # print("question::",question)
    #st.write(question)
    q_embeddings = openai.Embedding.create(input=question, engine='text-embedding-ada-002')['data'][0]['embedding'] #use open_source embedding
-
+   df = pd.read_csv('embeddings.csv', index_col=0)
+   df['embeddings'] = df['embeddings'].apply(literal_eval).apply(np.array)
    # Get the distances from the embeddings
    df['distances'] = distances_from_embeddings(q_embeddings, df['embeddings'].values, distance_metric='cosine')
 
@@ -323,10 +327,7 @@ def answer_question(
           return answer
 
       else:
-         load_dotenv()
-         SECRET_IN_ENV = True
-         SECRET_TOKEN = os.environ['SECRET_TOKEN']
-         openai.api_key = SECRET_TOKEN
+         
 
          #generate openai emebeddings
          context = create_context(
