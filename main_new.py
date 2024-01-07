@@ -4,7 +4,7 @@ import math
 import pandas as pd
 import streamlit as st
 import openai
-from qa_new import answer_question
+from qa_new1 import chat_gpt
 #from hugchat import hugchat
 #from hugchat.login import Login
 import os
@@ -90,8 +90,8 @@ with st.sidebar:
     hf_email = 'anupam_purwar2019@pgp.isb.edu'
     hf_pass = 'PASS'
     st.markdown('📖 This app is hosted by I-Venture @ ISB [website](https://i-venture.org/)!')
-    image = Image.open('Shark.jpg')
-    st.image(image, caption=None, width=None, use_column_width=None, clamp=False, channels='RGB', output_format='auto')
+    #image = Image.open('Ivlogo.png.png')
+    #st.image(image, caption=None, width=None, use_column_width=None, clamp=False, channels='RGB', output_format='auto')
 #
 
 # Store LLM generated responses
@@ -107,23 +107,23 @@ for message in st.session_state.messages:
 def generate_response(prompt_input, email, passwd):
      question0=prompt_input
      question=prompt_input
-     ans = answer_question(prompt_input)
+     ans = chat_gpt(prompt_input)
      # st.write(ans)
      if (ans=='I don\'t know.' or ans=='I don\'t know' or ans== 'I could not find an answer.' or 'I could not find' in ans  or ' I couldn\'t find'  in ans  ):
            question=question0+ " ISB DLabs"
-           ans=answer_question(question)
+           ans=chat_gpt(question)
            if (ans=='I don\'t know.'  or ans=='I don\'t know' or ans== 'I could not find an answer.' or 'I could not find' in ans or ' I couldn\'t find'  in ans  ):
              question=question0+ " ISB"
-             ans=answer_question(question)
+             ans=chat_gpt(question)
              if (ans=='I don\'t know.'  or ans=='I don\'t know'  or ans== 'I could not find an answer.' or 'I could not find' in ans or ' I couldn\'t find'  in ans  ):
                question=question0+ " I-Venture @ ISB"
-               ans=answer_question(question)
+               ans=chat_gpt(question)
                if (ans=='I don\'t know.'  or ans=='I don\'t know'  or ans== 'I could not find an answer.' or 'I could not find' in ans or ' I couldn\'t find'  in ans  ):
                    question=question0+ "Dlabs ISB"
-                   ans=answer_question(question)
+                   ans=chat_gpt(question)
                    if (ans=='I don\'t know.'  or ans=='I don\'t know'  or ans== 'I could not find an answer.' or 'I could not find' in ans or ' I couldn\'t find'  in ans  ):
                        question=question0+ "Indian School of Business"
-                       ans=answer_question(question)
+                       ans=chat_gpt(question)
      return ans
 
 # User-provided prompt
