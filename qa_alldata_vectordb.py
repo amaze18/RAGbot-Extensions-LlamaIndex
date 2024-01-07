@@ -31,13 +31,12 @@ text_splitter=RecursiveCharacterTextSplitter(chunk_size=2000,chunk_overlap=200)
 texts=text_splitter.split_documents(documents)
 print(texts)
 embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
-db=FAISS.from_documents(texts,embeddings)
-db.save_local("scraped_vectordb")
+#db=FAISS.from_documents(texts,embeddings)
+#db.save_local("scraped_vectordb")
 def chat_gpt(question):
-    openai.api_key = "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"
 
     embeddings= OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=openai.api_key)
-    #db=FAISS.load_local("scarped_vectordb", embeddings)
+    db=FAISS.load_local("scarped_vectordb/faiss_index", embeddings)
 
 
     retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 5} )#do not increase k beyond 3, else
