@@ -23,7 +23,7 @@ from langchain.prompts import SystemMessagePromptTemplate
 from langchain.prompts import HumanMessagePromptTemplate
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import RetrievalQA
-text_folder_path = r"scraped_files/text"
+text_folder_path = r"scraped_files"
 text_loader_kwargs={'autodetect_encoding': True}
 loader=DirectoryLoader(text_folder_path,glob="./*.txt",use_multithreading=True,loader_kwargs=text_loader_kwargs,silent_errors=True)
 documents=loader.load()
