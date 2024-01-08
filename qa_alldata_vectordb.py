@@ -4,8 +4,7 @@ import os
 import faiss
 import warnings
 warnings.filterwarnings("ignore")
-SECRET_TOKEN = os.environ["OPENAI_API_KEY"] 
-openai.api_key = SECRET_TOKEN
+openai.api_key = os.environ['SECRET_TOKEN']
 import langchain
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers import MultiQueryRetriever
@@ -23,25 +22,44 @@ from langchain.prompts import SystemMessagePromptTemplate
 from langchain.prompts import HumanMessagePromptTemplate
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import RetrievalQA
-"""text_folder_path = r"scraped_files"
+import re
+text_folder_path = r"scraped_files/processed"
+texts=[]
+
+for file in os.listdir(text_folder_path):
+    try:
+        with open(text_folder_path+ "/" + file, "r", encoding="UTF-8") as f:
+            for line in f.readlines():
+                if re.search('\S', line): 
+                    print(line)
+        f.close()
+    except UnicodeDecodeError:
+        with open(text_folder_path+ "/" + file, "r", encoding="latin-1") as f:
+            for line in f.readlines():
+                if re.search('\S', line): 
+                    print(line)
+        f.close()
+    else:
+        f.close()
+
 text_loader_kwargs={'autodetect_encoding': True}
 loader=DirectoryLoader(text_folder_path,glob="./*.txt",use_multithreading=True,loader_kwargs=text_loader_kwargs,silent_errors=True)
 documents=loader.load()
-text_splitter=RecursiveCharacterTextSplitter(chunk_size=2000,chunk_overlap=200)
+text_splitter=RecursiveCharacterTextSplitter(chunk_size=1200,chunk_overlap=120)
 texts=text_splitter.split_documents(documents)
 print(texts)
-embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
-#db=FAISS.from_documents(texts,embeddings)
-#db.save_local("scraped_vectordb")
-"""
+embeddings = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=openai.api_key)
+db=FAISS.from_documents(texts,embeddings)
+
+
 def chat_gpt(question):
 
     embeddings= OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=openai.api_key)
-    db=FAISS.load_local("scarped_vectordb", embeddings)
+
 
 
     retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 3} )#do not increase k beyond 3, else
-    llm = OpenAI(model='text-davinci-003',temperature=0, openai_api_key=openai.api_key)
+    llm = OpenAI(model='text-embedding-ada-002',temperature=0, openai_api_key=openai.api_key)
     qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
 
 
