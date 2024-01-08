@@ -23,7 +23,7 @@ from langchain.prompts import SystemMessagePromptTemplate
 from langchain.prompts import HumanMessagePromptTemplate
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import RetrievalQA
-text_folder_path = r"scraped_files"
+"""text_folder_path = r"scraped_files"
 text_loader_kwargs={'autodetect_encoding': True}
 loader=DirectoryLoader(text_folder_path,glob="./*.txt",use_multithreading=True,loader_kwargs=text_loader_kwargs,silent_errors=True)
 documents=loader.load()
@@ -33,10 +33,11 @@ print(texts)
 embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
 #db=FAISS.from_documents(texts,embeddings)
 #db.save_local("scraped_vectordb")
+"""
 def chat_gpt(question):
 
     embeddings= OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=openai.api_key)
-    db=FAISS.load_local("scarped_vectordb/faiss_index", embeddings)
+    db=FAISS.load_local("scarped_vectordb", embeddings)
 
 
     retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 3} )#do not increase k beyond 3, else
