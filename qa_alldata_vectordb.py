@@ -25,7 +25,7 @@ from langchain.chains import RetrievalQA
 import re
 text_folder_path = r"scraped_files/processed"
 texts=[]
-
+"""
 for file in os.listdir(text_folder_path):
     try:
         with open(text_folder_path+ "/" + file, "r", encoding="UTF-8") as f:
@@ -50,7 +50,7 @@ texts=text_splitter.split_documents(documents)
 print(texts)
 embeddings = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=openai.api_key)
 db=FAISS.from_documents(texts,embeddings)
-
+"""
 
 def chat_gpt(question):
 
@@ -65,12 +65,24 @@ def chat_gpt(question):
 
     query = question
     res = qa(query)
-    response = openai.ChatCompletion.create(
-	model="gpt-3.5-turbo",
-	#model="gpt-4-0613",
-	messages=[
-    	{"role": "system", "content": "You are a helpful chatbot who answers questions asked based only on context provided in a friendly tone, if you do not know the answer, say I don\'t know"},
-    	{"role": "user", "content": f"{res}"}
-	])
-    answer= response["choices"][0]["message"]["content"]
+    try:
+	    
+	    response = openai.ChatCompletion.create(
+		model="gpt-3.5-turbo",
+		#model="gpt-4-0613",
+		messages=[
+	    	{"role": "system", "content": "You are a helpful chatbot who answers questions asked based only on context provided in a friendly tone, if you do not know the answer, say I don\'t know"},
+	    	{"role": "user", "content": f"{res}"}
+		])
+	    answer= response["choices"][0]["message"]["content"]
+    except InvalidRequestError:
+	    response = openai.ChatCompletion.create(
+		model="gpt-3.5-turbo",
+		max_tokens=2000,
+		#model="gpt-4-0613",
+		messages=[
+	    	{"role": "system", "content": "You are a helpful chatbot who answers questions asked based only on context provided in a friendly tone, if you do not know the answer, say I don\'t know"},
+	    	{"role": "user", "content": f"{res}"}
+		])
+	    answer= response["choices"][0]["message"]["content"]
     return answer
