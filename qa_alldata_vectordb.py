@@ -24,6 +24,7 @@ from langchain.prompts import HumanMessagePromptTemplate
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import RetrievalQA
 import re
+"""
 text_folder_path = r"scraped_files/processed"
 texts=[]
 
@@ -46,12 +47,12 @@ for file in os.listdir(text_folder_path):
 text_loader_kwargs={'autodetect_encoding': True}
 loader=DirectoryLoader(text_folder_path,glob="./*.txt",loader_cls=UnstructuredFileLoader,use_multithreading=True,loader_kwargs=text_loader_kwargs,silent_errors=True)
 documents=loader.load()
-text_splitter=RecursiveCharacterTextSplitter(chunk_size=2000,chunk_overlap=2000)
+text_splitter=RecursiveCharacterTextSplitter(chunk_size=2000,chunk_overlap=200)
 texts=text_splitter.split_documents(documents)
 embeddings = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=openai.api_key)
 db=FAISS.from_documents(texts,embeddings)
 db.save_local("scraped_files/processed")
-
+"""
 def chat_gpt(question):
 
     embeddings= OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=openai.api_key)
