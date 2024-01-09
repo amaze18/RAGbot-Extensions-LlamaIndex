@@ -56,7 +56,7 @@ def chat_gpt(question):
 
     embeddings= OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=openai.api_key)
     db=FAISS.load_local("scraped_files/processed",embeddings)
-    retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 3} )#do not increase k beyond 3, else
+    retriever = db.as_retriever(search_type='similarity', search_kwargs={"k": 4} )#do not increase k beyond 3, else
     llm = OpenAI(model='text-embedding-ada-002',temperature=0, openai_api_key=openai.api_key)
     qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
 
@@ -68,17 +68,18 @@ def chat_gpt(question):
         model="gpt-3.5-turbo",
         #model="gpt-4-0613",
         messages=[
-            {"role": "system", "content": "You are a helpful chatbot who answers questions asked based only on context provided in a friendly tone, if you do not know the answer, say I don\'t know"},
+            {"role": "system", "content": "You are a chatbot who answers questions asked based on following provided context/content, if you do not know answer, say I don\'t know"},
             {"role": "user", "content": f"{res}"}
         ])
         answer= response["choices"][0]["message"]["content"]
     except InvalidRequestError:
         response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        max_tokens=2000,
+        max_tokens=2500,
         #model="gpt-4-0613",
         messages=[
-            {"role": "system", "content": "You are a helpful chatbot who answers questions asked based only on context provided in a friendly tone, if you do not know the answer, say I don\'t know"},
+              {"role": "system", "content": "You are a chatbot who answers questions asked based on following provided context/content, if you do not know answer, say I don\'t know"},
+           # {"role": "system", "content": "You are a helpful chatbot who answers questions asked based only on context provided in a friendly tone, if you do not know the answer, say I don\'t know"},
             {"role": "user", "content": f"{res}"}
         ])
         answer= response["choices"][0]["message"]["content"]
