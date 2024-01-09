@@ -4,7 +4,7 @@ import os
 import faiss
 import warnings
 warnings.filterwarnings("ignore")
-openai.api_key = is.environ['SECRET_TOKEN']
+openai.api_key = os.environ['SECRET_TOKEN']
 import langchain
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers import MultiQueryRetriever
