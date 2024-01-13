@@ -4,7 +4,7 @@ import math
 import pandas as pd
 import streamlit as st
 import openai
-from qa_cc import chat_gpt
+from qa_mqr import chat_gpt
 #from hugchat import hugchat
 #from hugchat.login import Login
 import os
