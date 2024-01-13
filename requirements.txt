@@ -17,6 +17,7 @@ transformers
 requests
 glob2
 pandas
+pydantic==2.5.3
 numpy
 html-parser
 regex
