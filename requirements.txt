@@ -23,6 +23,7 @@ regex
 tiktoken
 openai[embeddings]
 langchain
+langchain_community
 sentence_transformers
 tiktoken
 pdfminer.six
