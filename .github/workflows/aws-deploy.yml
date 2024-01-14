@@ -1,0 +1,26 @@
+# Trigger deployment only on push to master branch
+on:
+  push:
+    branches:
+      - Developer_Branch
+
+jobs:
+  deploy:
+    name: Deploy to EC2 on Developer branch push
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v2
+
+      - name: Deploy to Server 1
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: ${{ secrets.TARGET_DIR }}
+#EC2_SSH_KEY: This will be your .pem file which you will use to login to the instance
+#HOST_DNS: Public DNS record of the instance, it will look something like this ec2-xx-xxx-xxx-xxx.us-west-2.compute.amazonaws.com
+#USERNAME: Will be the username of the EC2 instance, usually ubuntu
+#TARGET_DIR: Is where you want to deploy your code.
