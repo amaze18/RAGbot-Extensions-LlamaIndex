@@ -149,6 +149,8 @@ if st.session_state.messages[-1]["role"] != "assistant":
         with st.spinner("Thinking..."):
             response = generate_response(prompt,hf_email,hf_pass)[0]
             st.write(response)
+            for i in range(len(generate_response(prompt,hf_email,hf_pass)[1]['source_documents']):
+                st.write(generate_response(prompt,hf_email,hf_pass)[1]['source_documents'][i].page_content)
     message = {"role": "assistant", "content": response}
     st.session_state.messages.append(message)
 
