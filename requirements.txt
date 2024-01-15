@@ -8,8 +8,10 @@ openapi-schema-pydantic>=1.2.4
 streamlit
 python-dotenv>=1.0.0
 accelerate
+openpyxl
 bitsandbytes
 gradio
+llama-index
 protobuf
 scipy
 sentencepiece
