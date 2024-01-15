@@ -3,7 +3,7 @@ import altair as alt
 import math
 import pandas as pd
 import streamlit as st
-import openpyxl
+#import openpyxl
 from datetime import timedelta
 import openai
 import time
@@ -102,6 +102,10 @@ index = load_index_from_storage(storage_context)
 
 if "chat_engine" not in st.session_state.keys(): # Initialize the chat engine
         st.session_state.chat_engine = index.as_chat_engine(chat_mode="condense_question", verbose=True)
+
+if prompt := st.chat_input("Your question"): # Prompt for user input and save to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
 # Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -121,21 +125,20 @@ if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             starttime=time.perf_counter()
-            answer = generate_response(prompt,hf_email,hf_pass)[0]
+            response = st.session_state.chat_engine.chat(prompt)
+            st.write(response.response)
             duration=timedelta(seconds=time.perf_counter()-starttime)
-            st.write(answer)
+            st.write(response.respose)
             st.write("Response Time: "+str(duration))
-            for i in range(len(generate_response(prompt,hf_email,hf_pass)[1]['source_documents'])):
-                st.write(generate_response(prompt,hf_email,hf_pass)[1]['source_documents'][i].page_content)
-            
+            """
             workbook = openpyxl.load_workbook(r"C:\Users\Kush Juvekar\Desktop\Bot_Answers.xlsx")
             sheet = workbook.active
             data=[[str(answer),str(duration)]]
             for row in data:
                 sheet.append(row)
             workbook.save(r"C:\Users\Kush Juvekar\Desktop\Bot_Answers.xlsx")
-            
-    message = {"role": "assistant", "content": answer}
+            """
+    message = {"role": "assistant", "content": response.response}
     st.session_state.messages.append(message)
 
 
