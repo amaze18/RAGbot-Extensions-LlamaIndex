@@ -128,7 +128,7 @@ if st.session_state.messages[-1]["role"] != "assistant":
             response = st.session_state.chat_engine.chat(prompt)
             st.write(response.response)
             duration=timedelta(seconds=time.perf_counter()-starttime)
-            st.write(response.respose)
+            st.write(response.response)
             st.write("Response Time: "+str(duration))
             """
             workbook = openpyxl.load_workbook(r"C:\Users\Kush Juvekar\Desktop\Bot_Answers.xlsx")
