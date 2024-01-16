@@ -1,20 +1,31 @@
+#-------------STD DEPENDENCIES---------------------------#
+import os
 from collections import namedtuple
-import altair as alt
 import math
-import pandas as pd
-import streamlit as st
-#import openpyxl
-from datetime import timedelta
-import openai
 import time
+from datetime import timedelta
+
+#---------------CHATBOT DEPENDENCIES-----------------#
+import altair as alt
+import pandas as pd
+import openai
 #from hugchat import hugchat
 #from hugchat.login import Login
-import os
+#import openpyxl
+from llama_index import StorageContext, load_index_from_storage
+
+#----------------------UI DEPENDENCIES---------------#
+from PIL import Image
+
+import streamlit as st
+
 from htbuilder import HtmlElement, div, ul, li, br, hr, a, p, img, styles, classes, fonts
 from htbuilder.units import percent, px
 from htbuilder.funcs import rgba, rgb
 
 
+SECRET_TOKEN = os.environ["SECRET_TOKEN"]
+openai.api_key = SECRET_TOKEN
 
 def image(src_as_string, **style):
     return img(src=src_as_string, style=styles(**style))
@@ -74,12 +85,6 @@ def layout(*args):
     st.markdown(str(foot), unsafe_allow_html=True)
 
 
-from PIL import Image
-
-
-import os
-SECRET_TOKEN = os.environ["SECRET_TOKEN"]
-openai.api_key = SECRET_TOKEN
 
 # App title
 st.set_page_config(page_title="🤗💬 I-Venture @ ISB AI-Chat Bot")
@@ -96,7 +101,7 @@ with st.sidebar:
     st.image(image, caption=None, width=None, use_column_width=None, clamp=False, channels='RGB', output_format='auto')
 
 
-from llama_index import StorageContext, load_index_from_storage
+
 storage_context = StorageContext.from_defaults(persist_dir="BITSPilani/")
 index = load_index_from_storage(storage_context)
 
