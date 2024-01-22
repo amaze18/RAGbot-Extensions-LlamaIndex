@@ -17,8 +17,9 @@ from qa_llamaindex import indexgenerator
 from llama_index.llms import OpenAI
 from llama_index import ServiceContext
 from llama_index.query_engine import RetrieverQueryEngine
-from llama_index import (get_response_synthesizer)
-from llama_index.query_engine import RetrieverQueryEngine
+from llama_index.postprocessor import LongContextReorder
+from llama_index.schema import Node, NodeWithScore
+from llama_index.response_synthesizers import get_response_synthesizer
 from qa_llamaindex import react_chatbot_engine, condense_context_question_chatbot_engine, context_chatbot_engine,condense_question_chatbot_engine
 from qa_llamaindex import react_chatbot_engine, condense_question_chatbot_engine, condense_context_question_chatbot_engine, context_chatbot_engine
 #----------------------UI DEPENDENCIES---------------#
@@ -109,7 +110,7 @@ with st.sidebar:
 
 #storage_context = StorageContext.from_defaults(persist_dir=indexPath)
 #index = load_index_from_storage(storage_context)
-indexPath="scraped_files\processed\striped_files_newllamaindex_entities_0.2"
+indexPath="llamaindex_entities_0.2"
 documentsPath="scraped_files\processed\striped_files_new"
 index=indexgenerator(indexPath,documentsPath)
 
