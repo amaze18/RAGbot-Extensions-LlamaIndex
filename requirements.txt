@@ -12,6 +12,10 @@ openpyxl
 bitsandbytes
 gradio
 llama-index
+plotly
+scipy
+scikit-learn
+tenacity
 protobuf
 scipy
 sentencepiece
