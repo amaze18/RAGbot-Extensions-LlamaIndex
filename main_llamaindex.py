@@ -2,8 +2,6 @@
 import os
 from collections import namedtuple
 import math
-import time
-from datetime import timedelta
 
 #---------------CHATBOT DEPENDENCIES-----------------#
 import altair as alt
@@ -13,8 +11,15 @@ import openai
 #from hugchat.login import Login
 #import openpyxl
 from llama_index import StorageContext, load_index_from_storage
-
-
+from llama_index.postprocessor import SentenceTransformerRerank
+from llama_index.postprocessor import MetadataReplacementPostProcessor
+from qa_llamaindex import indexgenerator
+from llama_index.llms import OpenAI
+from llama_index import ServiceContext
+from llama_index.query_engine import RetrieverQueryEngine
+from llama_index import (get_response_synthesizer)
+from llama_index.query_engine import RetrieverQueryEngine
+from qa_llamaindex import react_chatbot_engine, condense_context_question_chatbot_engine, context_chatbot_engine,condense_question_chatbot_engine
 from qa_llamaindex import react_chatbot_engine, condense_question_chatbot_engine, condense_context_question_chatbot_engine, context_chatbot_engine
 #----------------------UI DEPENDENCIES---------------#
 from PIL import Image
@@ -25,9 +30,6 @@ from htbuilder import HtmlElement, div, ul, li, br, hr, a, p, img, styles, class
 from htbuilder.units import percent, px
 from htbuilder.funcs import rgba, rgb
 
-
-SECRET_TOKEN = os.environ["SECRET_TOKEN"]
-openai.api_key = SECRET_TOKEN
 
 def image(src_as_string, **style):
     return img(src=src_as_string, style=styles(**style))
@@ -88,6 +90,9 @@ def layout(*args):
 
 
 
+SECRET_TOKEN = os.environ["SECRET_TOKEN"]
+openai.api_key = SECRET_TOKEN
+
 # App title
 st.set_page_config(page_title="🤗💬 I-Venture @ ISB AI-Chat Bot")
 st.header("I-Venture @ ISB AI-Chat Bot")
@@ -102,21 +107,12 @@ with st.sidebar:
     image = Image.open('Ivlogo.png.png')
     st.image(image, caption=None, width=None, use_column_width=None, clamp=False, channels='RGB', output_format='auto')
 
+#storage_context = StorageContext.from_defaults(persist_dir=indexPath)
+#index = load_index_from_storage(storage_context)
+indexPath="scraped_files\processed\striped_files_newllamaindex_entities_0.2"
+documentsPath="scraped_files\processed\striped_files_new"
+index=indexgenerator(indexPath,documentsPath)
 
-
-storage_context = StorageContext.from_defaults(persist_dir="BITSPilani/")
-index = load_index_from_storage(storage_context)
-
-if "chat_engine" not in st.session_state.keys(): # Initialize the chat engine
-        st.session_state.chat_engine = index.as_chat_engine(chat_mode="condense_question", verbose=True)
-
-if prompt := st.chat_input("Your question"): # Prompt for user input and save to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    
-# Display chat messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
 # User-provided prompt
 page_bg_img = '''
 <style>
@@ -126,28 +122,42 @@ background-size: cover;
 }
 </style>
 '''
+if "messages" not in st.session_state.keys():
+        st.session_state.messages = [{"role": "assistant", "content": "Ask anything about I-Venture @ ISB ..."}]
 
-#st.markdown(page_bg_img, unsafe_allow_html=True)
+    # Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
+if prompt := st.chat_input("Your question"): # Prompt for user input and save to chat history
+            st.session_state.messages.append({"role": "user", "content": prompt})
+from llama_index.postprocessor import LongContextReorder
+from llama_index.schema import Node, NodeWithScore
+from llama_index.response_synthesizers import get_response_synthesizer
+
+response_synthesizer = get_response_synthesizer(response_mode="refine")
+postprocessor = LongContextReorder()
+qa_prompt="You are a helpful and friendly chatbot who addresses queries regarding I-Venture @ ISB.Instruction: Use the previous chat history, or the context above, to interact and help the user.If you can find the answer you say I don't know"
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            starttime=time.perf_counter()
-            response = st.session_state.chat_engine.chat(prompt)
-            st.write(response.response)
-            duration=timedelta(seconds=time.perf_counter()-starttime)
-            st.write(response.response)
-            st.write("Response Time: "+str(duration))
-            """
-            workbook = openpyxl.load_workbook(r"C:\Users\Kush Juvekar\Desktop\Bot_Answers.xlsx")
-            sheet = workbook.active
-            data=[[str(answer),str(duration)]]
-            for row in data:
-                sheet.append(row)
-            workbook.save(r"C:\Users\Kush Juvekar\Desktop\Bot_Answers.xlsx")
-            """
-    message = {"role": "assistant", "content": response.response}
-    st.session_state.messages.append(message)
-
+                    base_retriever = index.as_retriever(similarity_top_k=5)
+                    llm = OpenAI(model="gpt-3.5-turbo")
+                    service_context = ServiceContext.from_defaults(llm=llm)
+                    rerank = SentenceTransformerRerank(model="BAAI/bge-reranker-base", top_n=10)
+                    query_engine_base = RetrieverQueryEngine.from_args(base_retriever, service_context=service_context,node_postprocessors=[rerank,MetadataReplacementPostProcessor(target_metadata_key="window"),postprocessor],response_synthesizer=response_synthesizer,qa_prompt=qa_prompt)
+                    response = query_engine_base.query(prompt)
+                    st.write(response)
+                    if "not mentioned in" in response.response:
+                        st.write("DISTANCE APPROACH")
+                        response=generate_response(prompt,hf_email,hf_pass)
+                        st.write(response)
+                        message = {"role": "assistant", "content": response}
+                        st.session_state.messages.append(message)
+                    else:
+                        st.write(response.response)
+                        message = {"role": "assistant", "content": response.response}
+                        st.session_state.messages.append(message)
 
 myargs = [
     "Made in India",""
