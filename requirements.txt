@@ -27,7 +27,8 @@ langchain
 sentence_transformers
 tiktoken
 pdfminer.six
-openai==0.27.7
+rank_bm25
+openai==1.7.2
 faiss-cpu
 unstructured
 htbuilder
