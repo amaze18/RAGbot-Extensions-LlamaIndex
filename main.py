@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 import openai
 from qa_cc import chat_gpt
-from evaluation import get_reference_response, calculate_rouge_scores, evaluate_response_time
+from evaluate import get_reference_response, calculate_rouge_scores, evaluate_response_time
 #from hugchat import hugchat
 #from hugchat.login import Login
 import os
