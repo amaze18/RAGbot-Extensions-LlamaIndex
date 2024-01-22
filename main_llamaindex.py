@@ -20,6 +20,8 @@ from llama_index.query_engine import RetrieverQueryEngine
 from llama_index.postprocessor import LongContextReorder
 from llama_index.schema import Node, NodeWithScore
 from llama_index.response_synthesizers import get_response_synthesizer
+from llama_index.retrievers import BaseRetriever
+from llama_index.retrievers import BM25Retriever
 from qa_llamaindex import react_chatbot_engine, condense_context_question_chatbot_engine, context_chatbot_engine,condense_question_chatbot_engine
 from qa_llamaindex import react_chatbot_engine, condense_question_chatbot_engine, condense_context_question_chatbot_engine, context_chatbot_engine
 #----------------------UI DEPENDENCIES---------------#
@@ -113,7 +115,28 @@ with st.sidebar:
 indexPath="llamaindex_entities_0.2"
 documentsPath="scraped_files\processed\striped_files_new"
 index=indexgenerator(indexPath,documentsPath)
+vector_retriever = index.as_retriever(similarity_top_k=10)
+nodes=index.docstore.docs.values()
+bm25_retriever = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=10)
+class HybridRetriever(BaseRetriever):
+    def __init__(self, vector_retriever, bm25_retriever):
+        self.vector_retriever = vector_retriever
+        self.bm25_retriever = bm25_retriever
+        super().__init__()
 
+    def _retrieve(self, query, **kwargs):
+        bm25_nodes = self.bm25_retriever.retrieve(query, **kwargs)
+        vector_nodes = self.vector_retriever.retrieve(query, **kwargs)
+
+        # combine the two lists of nodes
+        all_nodes = []
+        node_ids = set()
+        for n in bm25_nodes + vector_nodes:
+            if n.node.node_id not in node_ids:
+                all_nodes.append(n)
+                node_ids.add(n.node.node_id)
+        return all_nodes
+hybrid_retriever = HybridRetriever(vector_retriever, bm25_retriever)
 # User-provided prompt
 page_bg_img = '''
 <style>
@@ -142,14 +165,13 @@ qa_prompt="You are a helpful and friendly chatbot who addresses queries regardin
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-                    base_retriever = index.as_retriever(similarity_top_k=5)
+                    #base_retriever = index.as_retriever(similarity_top_k=5)
                     llm = OpenAI(model="gpt-3.5-turbo")
                     service_context = ServiceContext.from_defaults(llm=llm)
-                    rerank = SentenceTransformerRerank(model="BAAI/bge-reranker-base", top_n=10)
-                    query_engine_base = RetrieverQueryEngine.from_args(base_retriever, service_context=service_context,node_postprocessors=[rerank,MetadataReplacementPostProcessor(target_metadata_key="window"),postprocessor],response_synthesizer=response_synthesizer,qa_prompt=qa_prompt)
+                    reranker = SentenceTransformerRerank(model="BAAI/bge-reranker-base", top_n=10)
+                    query_engine_base = RetrieverQueryEngine.from_args(hybrid_retriever, service_context=service_context,node_postprocessors=[reranker,MetadataReplacementPostProcessor(target_metadata_key="window"),postprocessor],response_synthesizer=response_synthesizer,qa_prompt=qa_prompt)
                     response = query_engine_base.query(prompt)
-                    st.write(response)
-                    if "not mentioned in" in response.response:
+                    if "not mentioned in" in response.response or "sorry" in response.response or "I don't know" in response.response:
                         st.write("DISTANCE APPROACH")
                         response=generate_response(prompt,hf_email,hf_pass)
                         st.write(response)
