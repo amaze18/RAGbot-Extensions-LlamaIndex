@@ -7,6 +7,7 @@ beautifulsoup4>=4.12.2
 openapi-schema-pydantic>=1.2.4
 streamlit
 python-dotenv>=1.0.0
+flashrank
 accelerate
 openpyxl
 bitsandbytes
