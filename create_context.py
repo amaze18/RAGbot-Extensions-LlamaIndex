@@ -114,9 +114,9 @@ from ast import literal_eval
 df = pd.read_csv('embeddings_new.csv', index_col=0)
 df['embeddings'] = df['embeddings'].apply(literal_eval).apply(np.array)
 """
+df=pd.read_csv('embeddings_new.csv',index_col=0)
 def create_context(
-    question, df=pd.read_csv('embeddings_new.csv',index_col=0)
-):
+    question, df=df):
     """
     Create a context for a question by finding the most similar context from the dataframe
     """
