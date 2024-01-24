@@ -14,7 +14,7 @@ from llama_index import StorageContext, load_index_from_storage
 from llama_index.postprocessor import SentenceTransformerRerank
 from llama_index.postprocessor import MetadataReplacementPostProcessor
 from qa_llamaindex import indexgenerator
-from qa_llamaindex import generate_response
+from create_context import generate_response
 from llama_index.llms import OpenAI
 from llama_index import ServiceContext
 from llama_index.query_engine import RetrieverQueryEngine
