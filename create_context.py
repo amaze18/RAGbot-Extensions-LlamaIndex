@@ -168,7 +168,7 @@ def answer_question(question,):
     stop_sequence=None
     context = create_context(question,df=pd.read_csv('embeddings_new.csv',index_col=0))
     print(context)
-    ranker=Ranker("ms-marco-MiniLM-L-12-v2")
+    ranker=Ranker("ms-marco-MiniLM-L-12-v2",cache_dir="llamaindex_entities_0.2")
     rerankrequest=RerankRequest(query=question,passages=context)
     results=ranker.rerank(rerankrequest)
     print(results)
