@@ -12,6 +12,7 @@ accelerate
 openpyxl
 bitsandbytes
 gradio
+rank_bm25
 llama-index
 plotly
 scipy
