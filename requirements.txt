@@ -13,7 +13,7 @@ openpyxl
 bitsandbytes
 gradio
 rank_bm25
-llama-index
+llama-index==0.9.34
 plotly
 scipy
 scikit-learn
