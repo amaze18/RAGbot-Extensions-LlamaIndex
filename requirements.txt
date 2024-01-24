@@ -33,7 +33,7 @@ sentence_transformers
 tiktoken
 pdfminer.six
 rank_bm25
-openai==1.7.2
+openai==1.8.0
 faiss-cpu
 unstructured
 htbuilder
