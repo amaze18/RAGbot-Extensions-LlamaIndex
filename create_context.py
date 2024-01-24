@@ -11,7 +11,8 @@ from numpy  import reshape
 from openai import OpenAI
 client = OpenAI(api_key=os.environ['SECRET_TOKEN'])
 from ast import literal_eval
-from chatbot_utils import distances_from_embeddings, cosine_similarity
+from chatbot_utils import distances_from_embeddings
+from flashrank.Ranker import RerankRequest,Ranker
 """
 # Assuming all your text files are in a directory named 'text_files'
 directory_path = 'scraped_files\processed\striped_files_new'
@@ -144,9 +145,14 @@ def create_context(
 
         # Else add it to the text that is being returned
         returns.append(row["text"])
-
+    my_dict={}
+    for index, element in enumerate(returns):
+        my_dict[index] = element
+    result_list = [{'id': key, 'text': value} for key, value in my_dict.items()]
+    #print(result_list)
     # Return the context
-    return "\n\n###\n\n".join(returns)
+    #return "\n\n###\n\n".join(returns)
+    return result_list
 
 def answer_question(question,):
     
@@ -161,6 +167,13 @@ def answer_question(question,):
     max_tokens=250
     stop_sequence=None
     context = create_context(question,df=pd.read_csv('embeddings_new.csv',index_col=0))
+    print(context)
+    ranker=Ranker("ms-marco-MiniLM-L-12-v2",cache_dir="/opt")
+    rerankrequest=RerankRequest(query=question,passages=context)
+    results=ranker.rerank(rerankrequest)
+    print(results)
+    text_values = [item['text'] for item in results]
+    joined_text = '###'.join(text_values)
     # If debug, print the raw model response
     if debug:
         print("Context:\n" + context)
@@ -168,7 +181,8 @@ def answer_question(question,):
     introduction = 'Use the below text to answer the subsequent question. If the answer cannot be found in the articles, write "I could not find an answer."'
     question_ai = f"\n\nQuestion: {question}"
     message = introduction
-    message = message + context + question_ai
+    #message = message + results + question_ai
+    message = message + joined_text + question_ai
     messages = [
         {"role": "system","content": "You are iVBot, an AI based chatbot assistant. You are friendly, proactive, factual and helpful, \
         you answer from the context provided"}, {"role": "user", "content": message},
