@@ -2,14 +2,14 @@
 import os
 from collections import namedtuple
 import math
-
+import pandas as pd
+from datetime import datetime
 #---------------CHATBOT DEPENDENCIES-----------------#
 import altair as alt
 import pandas as pd
 import openai
 #from hugchat import hugchat
 #from hugchat.login import Login
-#import openpyxl
 from llama_index import StorageContext, load_index_from_storage
 from llama_index.postprocessor import SentenceTransformerRerank
 from llama_index.postprocessor import MetadataReplacementPostProcessor
@@ -94,6 +94,7 @@ def layout(*args):
 
 
 
+
 SECRET_TOKEN = os.environ["SECRET_TOKEN"]
 openai.api_key = SECRET_TOKEN
 
@@ -171,13 +172,21 @@ if st.session_state.messages[-1]["role"] != "assistant":
                     service_context = ServiceContext.from_defaults(llm=llm)
                     reranker = SentenceTransformerRerank(model="BAAI/bge-reranker-base", top_n=10)
                     query_engine_base = RetrieverQueryEngine.from_args(hybrid_retriever, service_context=service_context,node_postprocessors=[reranker,MetadataReplacementPostProcessor(target_metadata_key="window"),postprocessor],response_synthesizer=response_synthesizer,qa_prompt=qa_prompt)
-                    response = query_engine_base.query(prompt)
+                    response = query_engine_base.query(str(prompt))
+                    df = pd.read_csv('logs/conversation_log.csv')
+                    new_row = {'question': str(prompt), 'answer': response.response}
+                    df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
+                    df.to_csv('logs/conversation_log.csv', index=False)
                     if "not mentioned in" in response.response or "sorry" in response.response or "I don't know" in response.response:
                         st.write("DISTANCE APPROACH")
                         response=generate_response(prompt,hf_email,hf_pass)
                         st.write(response)
                         message = {"role": "assistant", "content": response}
                         st.session_state.messages.append(message)
+                        df = pd.read_csv('logs/conversation_log.csv')
+                        new_row = {'question': str(prompt), 'answer': response}
+                        df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
+                        df.to_csv('logs/conversation_log.csv', index=False)
                     else:
                         st.write(response.response)
                         message = {"role": "assistant", "content": response.response}
