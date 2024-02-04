@@ -9,6 +9,7 @@ streamlit
 python-dotenv>=1.0.0
 accelerate
 bitsandbytes
+span-marker
 gradio
 protobuf
 scipy
