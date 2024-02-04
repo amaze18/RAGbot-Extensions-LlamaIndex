@@ -27,6 +27,8 @@ pandas
 numpy
 html-parser
 regex
+rouge
+boto3
 tiktoken
 openai[embeddings]
 langchain
