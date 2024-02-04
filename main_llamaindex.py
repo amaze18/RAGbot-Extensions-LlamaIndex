@@ -177,7 +177,13 @@ if st.session_state.messages[-1]["role"] != "assistant":
                     new_row = {'question': str(prompt), 'answer': response.response}
                     df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
                     df.to_csv('logs/conversation_log.csv', index=False)
-                    if "not mentioned in" in response.response or "sorry" in response.response or "I don't know" in response.response:
+                    validating_prompt = ("""You are an intelligent bot designed to assist users on an organization's website by answering their queries. You'll be given a user's question and an associated answer. Your task is to determine if the provided answer effectively resolves the query. If the answer is unsatisfactory, return 0.\n
+Query: {question}  
+Answer: {answer}
+Your Feedback:
+""")
+                    feedback = llm.complete(validating_prompt.format(question=prompt,answer=response.response))
+                    if feedback.text==str(0):
                         st.write("DISTANCE APPROACH")
                         response=generate_response(prompt,hf_email,hf_pass)
                         st.write(response)
