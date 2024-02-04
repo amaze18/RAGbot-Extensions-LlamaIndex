@@ -9,6 +9,7 @@ streamlit
 python-dotenv>=1.0.0
 flashrank
 accelerate
+span-marker
 openpyxl
 bitsandbytes
 gradio
