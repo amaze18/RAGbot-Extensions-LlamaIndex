@@ -30,14 +30,7 @@ from llama_index import (get_response_synthesizer)
 
 from llama_index.query_engine import RetrieverQueryEngine
 
-from llama_index.query_engine.transform_query_engine import (
-    TransformQueryEngine,
-)
-from llama_index.query_engine.multistep_query_engine import (
-    MultiStepQueryEngine,
-)
-
-from condense_plus_context import CondensePlusContextChatEngine
+from llama_index.chat_engine import CondensePlusContextChatEngine
 # import QueryBundle
 
 # Retrievers
@@ -124,8 +117,8 @@ with st.sidebar:
 
         #storage_context = StorageContext.from_defaults(persist_dir=indexPath)
         #index = load_index_from_storage(storage_context)
-indexPath=r"llamaindex_entities_0.2\1024\text_embedding_ada_002"
-documentsPath=r"Text_Files_Old"
+indexPath=r"/home/ec2-user/BITSPilani/llamaindex_entities_0.2/1024/text_embedding_ada_002"
+documentsPath=r"llamaindex_entities_0.2\1024\text_embedding_ada_002"
 index=indexgenerator(indexPath,documentsPath)
 vector_retriever = index.as_retriever(similarity_top_k=2)
 #nodes=index.docstore.docs.values()
@@ -158,9 +151,11 @@ background-size: cover;
 }
 </style>
 '''
+
+def callback():
+    st.session_state['form_clicked'] = True
 if "messages" not in st.session_state.keys():
         st.session_state.messages = [{"role": "assistant", "content": "Ask anything about I-Venture @ ISB ..."}]
-
     # Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -204,38 +199,48 @@ Your Feedback:
                             st.write(response)
                             message = {"role": "assistant", "content": response}
                             st.session_state.messages.append(message)
-                            with st.form('Answer Feedback'):
-                                answer_quality = st.slider(label='Rate the answer on a scale of 5. ', min_value=0.0, max_value=5.0, step=0.5)
-                                expected_answer = st.text_area('Enter expected answer: ')
-                                scores = rouge.get_scores(response, joined_text)
-                                df = pd.read_csv('logs/conversation_log.csv')
-                                new_row = {'question': str(prompt), 'answer': response, 'Answer Quality' : answer_quality, 'Expected Answer': expected_answer,'Rouge_Score' : scores}
-                                df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
-                                df.to_csv('logs/conversation_log.csv', index=False)
-                                bucket = 'aiex' # already created on S3
-                                csv_buffer = StringIO()
-                                df.to_csv(csv_buffer)
-                                s3_resource= boto3.resource('s3',aws_access_key_id=os.environ["ACCESS_ID"],aws_secret_access_key= os.environ["ACCESS_KEY"])
-                                s3_resource.Object(bucket, 'conversation_log.csv').put(Body=csv_buffer.getvalue())
-                                submitted = st.form_submit_button("Submit")
+                            if 'form_clicked' not in st.session_state:
+                                st.session_state['form_clicked'] = False
+                            if not st.session_state['form_clicked']:
+                                    with st.form('Answer Feedback'):
+                                        answer_quality = st.slider(label='Rate the answer on a scale of 5. ', min_value=0.0, max_value=5.0, step=0.5)
+                                        expected_answer = st.text_area('Enter expected answer: ')
+                                        scores = rouge.get_scores(response, joined_text)
+                                        submitted = st.form_submit_button(label="Submit",on_click=submitted)
+                            if st.session_state['form_clicked']:
+                                            df = pd.read_csv('logs/conversation_log.csv')
+                                            new_row = {'question': str(prompt), 'answer': response, 'Answer Quality' : answer_quality, 'Expected Answer': expected_answer,'Rouge_Score' : scores}
+                                            df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
+                                            df.to_csv('logs/conversation_log.csv', index=False)
+                                            bucket = 'aiex' # already created on S3
+                                            csv_buffer = StringIO()
+                                            df.to_csv(csv_buffer)
+                                            s3_resource= boto3.resource('s3',aws_access_key_id=os.environ["ACCESS_ID"],aws_secret_access_key= os.environ["ACCESS_KEY"])
+                                            s3_resource.Object(bucket, 'conversation_log.csv').put(Body=csv_buffer.getvalue())
+                                            reset()
                         else:
                             st.write(response.response)
                             message = {"role": "assistant", "content": response.response}
                             st.session_state.messages.append(message)
-                            with st.form('Answer Feedback'):
-                                answer_quality = st.slider(label='Rate the answer on a scale of 5. ', min_value=0.0, max_value=5.0, step=0.5)
-                                expected_answer = st.text_area('Enter expected answer: ')
-                                scores = rouge.get_scores(response.response, context_str)
-                                df = pd.read_csv('logs/conversation_log.csv')
-                                new_row = {'question': str(prompt), 'answer': response, 'Answer Quality' : answer_quality, 'Expected Answer': expected_answer,'Rouge_Score' : scores}
-                                df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
-                                df.to_csv('logs/conversation_log.csv', index=False)
-                                bucket = 'aiex' # already created on S3
-                                csv_buffer = StringIO()
-                                df.to_csv(csv_buffer)
-                                s3_resource= boto3.resource('s3',aws_access_key_id=os.environ["ACCESS_ID"],aws_secret_access_key= os.environ["ACCESS_KEY"])
-                                s3_resource.Object(bucket, 'conversation_log.csv').put(Body=csv_buffer.getvalue())
-                                submitted = st.form_submit_button("Submit")
+                            if 'form_clicked' not in st.session_state:
+                                st.session_state['form_clicked'] = False
+                            if not st.session_state['form_clicked']:
+                                    with st.form('Answer Feedback'):
+                                        answer_quality = st.slider(label='Rate the answer on a scale of 5. ', min_value=0.0, max_value=5.0, step=0.5)
+                                        expected_answer = st.text_area('Enter expected answer: ')
+                                        scores = rouge.get_scores(response, context_str)
+                                        submitted = st.form_submit_button(label="Submit",on_click=callback)
+                                        if st.session_state['form_clicked']:
+                                                        df = pd.read_csv('logs/conversation_log.csv')
+                                                        new_row = {'question': str(prompt), 'answer': response, 'Answer Quality' : answer_quality, 'Expected Answer': expected_answer,'Rouge_Score' : scores}
+                                                        df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
+                                                        df.to_csv('logs/conversation_log.csv', index=False)
+                                                        bucket = 'aiex' # already created on S3
+                                                        csv_buffer = StringIO()
+                                                        df.to_csv(csv_buffer)
+                                                        s3_resource= boto3.resource('s3',aws_access_key_id=os.environ["ACCESS_ID"],aws_secret_access_key= os.environ["ACCESS_KEY"])
+                                                        s3_resource.Object(bucket, 'conversation_log.csv').put(Body=csv_buffer.getvalue())
+                                        
 
 myargs = [
     "Made in India",""
