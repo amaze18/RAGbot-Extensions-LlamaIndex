@@ -3,15 +3,23 @@ import altair as alt
 import math
 import pandas as pd
 import streamlit as st
-from datetime import timedelta
+from ipywidgets.widgets import FloatSlider
+from IPython.display import display
 from llama_index.memory import ChatMemoryBuffer
 import openai
 from create_context import answer_question
+import time
 from PIL import Image
 from llama_index.retrievers import BM25Retriever
+from llama_index.retrievers import VectorIndexRetriever
+import boto3
+from io import StringIO
 #from hugchat import hugchat
 #from hugchat.login import Login
+from llama_index.schema import MetadataMode
+from rouge import Rouge
 import os
+from llama_index.postprocessor import SentenceTransformerRerank
 from htbuilder import HtmlElement, div, ul, li, br, hr, a, p, img, styles, classes, fonts
 from htbuilder.units import percent, px
 from htbuilder.funcs import rgba, rgb
@@ -19,8 +27,9 @@ from qa_llamaindex import indexgenerator
 from llama_index.llms import OpenAI
 from llama_index import ServiceContext
 from llama_index.query_engine import RetrieverQueryEngine
-
 from llama_index import (get_response_synthesizer)
+
+
 
 from llama_index.query_engine import RetrieverQueryEngine
 
@@ -32,6 +41,7 @@ from llama_index.retrievers import (BaseRetriever)
 
 from typing import List
 #from llama_index import (VectorStoreIndex,SimpleDirectoryReader)
+import tiktoken
 def image(src_as_string, **style):
     return img(src=src_as_string, style=styles(**style))
 
@@ -110,12 +120,12 @@ with st.sidebar:
 
         #storage_context = StorageContext.from_defaults(persist_dir=indexPath)
         #index = load_index_from_storage(storage_context)
-indexPath="scraped_files\processed\striped_files_new\llamaindex_entities_0.2"
-documentsPath="scraped_files\processed\striped_files_new"
+indexPath=r"index\1024\text_embedding_ada_002"
+documentsPath=r"Text_Files_Old"
 index=indexgenerator(indexPath,documentsPath)
-vector_retriever = index.as_retriever(similarity_top_k=2)
-nodes=index.docstore.docs.values()
-bm25_retriever = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=2)
+vector_retriever = VectorIndexRetriever(index=index,similarity_top_k=2)
+#nodes=index.docstore.docs.values()
+bm25_retriever = BM25Retriever.from_defaults(index=index, similarity_top_k=2)
 class HybridRetriever(BaseRetriever):
     def __init__(self, vector_retriever, bm25_retriever):
         self.vector_retriever = vector_retriever
@@ -144,76 +154,64 @@ background-size: cover;
 }
 </style>
 '''
-if "messages" not in st.session_state.keys():
-        st.session_state.messages = [{"role": "assistant", "content": "Ask anything about I-Venture @ ISB ..."}]
+context_prompt=(
+        "You are a helpful and friendly chatbot who addresses queries regarding I-Venture @ ISB."
+        "Here are the relevant documents for the context:\n"
+        "{context_str}"
+        "\nInstruction 1: Use the previous chat history, or the context above to answer. Be concise."
+        "\nInstruction 2: Say I don't know if you do not find the answer in context provided."
+        )
+memory=ChatMemoryBuffer.from_defaults(token_limit=3900)
+rouge = Rouge()
 
-    # Display chat messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-if prompt := st.chat_input("What is up?"):
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    # Display user message in chat message container
-    with st.chat_message("user"):
-        st.markdown(prompt)
-if st.session_state.messages[-1]["role"] != "assistant":
+
+def get_response(prompt):
+    llm = OpenAI(model="gpt-3.5-turbo")
+    service_context = ServiceContext.from_defaults(llm=llm)
+    query_engine=RetrieverQueryEngine.from_args(retriever=hybrid_retriever,service_context=service_context)
+    chat_engine=CondensePlusContextChatEngine.from_defaults(query_engine,memory=memory,context_prompt=context_prompt)
+    nodes = hybrid_retriever.retrieve(str(prompt))
+    context_str = "\n\n".join([n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes])
+    response = chat_engine.chat(str(prompt))
+    validating_prompt = ("""You are an intelligent bot designed to assist users on an organization's website by answering their queries. You'll be given a user's question and an associated answer. Your task is to determine if the provided answer effectively resolves the query. If the answer is unsatisfactory, return 0.\n
+                        Query: {question}  
+                        Answer: {answer}
+                        Your Feedback:
+                        """)
+    feedback = llm.complete(validating_prompt.format(question=prompt,answer=response.response))
+    if feedback.text==str(0):
+        st.write("DISTANCE APPROACH")
+        response , joined_text=answer_question(prompt)
+        st.write(response)
+        scores = rouge.get_scores(response, joined_text)
+        message = {"role": "assistant", "content": response}
+        st.session_state.messages.append(message)                                            
+    else:
+        scores=rouge.get_scores(response.response,context_str)
+        message = {"role": "assistant", "content": response.response}
+        st.session_state.messages.append(message)
+        response_list = [response.response , prompt , scores]
+        return response_list
+if "query_status" not in st.session_state:
+    st.session_state["query_status"] = False
+if "messages" not in st.session_state.keys():
+    st.session_state.messages = []
+with st.chat_message("user"):
+    prompt = st.chat_input("Let me know what you have in mind!")
+st.session_state.messages.append({"role": "user", "content": prompt})
+if prompt:
+    st.session_state["query_status"] = True
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-                    #nodes=index.docstore.docs.values()
-                    llm = OpenAI(model="gpt-3.5-turbo")
-                    service_context = ServiceContext.from_defaults(llm=llm)
-                    query_engine=RetrieverQueryEngine.from_args(retriever=hybrid_retriever,service_context=service_context)
-                    nodes=query_engine.retrieve(str(prompt))
-                    context_list=[]
-                    for n in nodes:
-                         context_list.append(n.get_content())
-                    context_str=""
-                    for i in range(len(context_list)):
-                         context_str+="Document "+str(i)+context_list[i]
-                    chat_engine=CondensePlusContextChatEngine.from_defaults(query_engine,memory=ChatMemoryBuffer(token_limit=3900),system_prompt=(
-        "You are a helpful and friendly chatbot who addresses queries regarding I-Venture @ ISB."
-        "\nInstruction: Store context for only last 2 questions."
-        ),context_prompt="""
-  The following is a friendly conversation between a user and an AI assistant.
-  The assistant is talkative and provides lots of specific details from its context.
-  If the assistant does not know the answer to a question, it truthfully says it
-  does not know.
-
-  Here are the relevant documents for the context:
-
-  {context_str}
-
-  Instruction: Store context for only last 2 questions.
-  """)
-                    response = chat_engine.chat(str(prompt))
-                    if "not mentioned in" in response.response or "I don't know" in response.response:
-                        st.write("DISTANCE APPROACH")
-                        response=answer_question(prompt)
-                        st.write(response)
-                        message = {"role": "assistant", "content": response}
-                        st.session_state.messages.append(message)
-                    else:
-                        st.write(response.response)
-                        message = {"role": "assistant", "content": response.response}
-                        st.session_state.messages.append(message)
-
-myargs = [
-    "Made in India",""
-    " with ❤️ by ",
-    link("https://www.linkedin.com/in/anupamisb/", "@Anupam"),
-     br(),
-     link("https://i-venture.org/chatbot/", "ISB ChatBoT"),
-    ]
-
-def footer():
-    myargs = [
-    "Made in India",""
-    " with ❤️ by ",
-    link("https://www.linkedin.com/in/anupamisb/", " Anupam for "),
-    link("https://i-venture.org/chatbot/", "I-Venture @ ISB"),
-    ]
-    layout(*myargs)
-
-#layout(*myargs)
-footer()
+            response_list = get_response(prompt=prompt)
+            st.write(response_list[0])
+        with st.form("kjbjb",clear_on_submit=True):
+            answer_quality = st.slider("Rate the answer out of 5: ",0.0,5.0,step=0.5)
+            if submitted :=st.form_submit_button("Submit"):
+                df = pd.read_csv('logs/conversation_logs.csv')
+                new_row = {'question': response_list[1], 'answer': response_list[0], 'Answer Quality' : answer_quality, 'Expected Answer': '','Rouge_Score' : response_list[2]}
+                df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
+                df.to_csv('logs/conversation_logs.csv', index=False)
+                bucket = 'aiex' # already created on S3
+                csv_buffer = StringIO()
+                df.to_csv(csv_buffer)
