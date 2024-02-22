@@ -12,7 +12,6 @@ accelerate
 span-marker
 openpyxl
 bitsandbytes
-gradio
 rank_bm25
 llama-index==0.9.34
 plotly
