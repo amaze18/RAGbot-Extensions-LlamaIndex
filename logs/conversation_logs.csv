@@ -1,1 +1,1 @@
-Question,Answer,Rouge_Score
+Question,Answer,Answer Quality,Unigram_Recall,Unigram_Precision,Bigram_Recall,Bigram_Precision
