@@ -25,9 +25,7 @@ from llama_index.legacy.retrievers import BM25Retriever
 from llama_index.legacy.retrievers import VectorIndexRetriever
 from llama_index.legacy.schema import QueryBundle
 from llama_index.legacy.schema import MetadataMode
-
 from llama_index.legacy.postprocessor import LongContextReorder 
-from qa_llamaindex import indexgenerator
 from llama_index.legacy.llms import OpenAI
 from llama_index.legacy import ServiceContext
 from llama_index.legacy.query_engine import RetrieverQueryEngine
@@ -113,7 +111,7 @@ with st.sidebar:
 
 #nodes=index.docstore.docs.values()
 
-indexPath_2000=r"index\2000\text_embedding_ada_002"
+indexPath_2000=r"llamaindex_entities_0.2"
 documentsPath_2000=r"Text_Files_Old"
 index_2000=indexgenerator(indexPath_2000,documentsPath_2000)
 vector_retriever_2000 = VectorIndexRetriever(index=index_2000,similarity_top_k=2)
