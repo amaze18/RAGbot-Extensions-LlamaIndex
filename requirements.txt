@@ -13,7 +13,7 @@ span-marker
 openpyxl
 bitsandbytes
 rank_bm25
-llama-index==0.9.34
+llama-index
 plotly
 scipy
 scikit-learn
