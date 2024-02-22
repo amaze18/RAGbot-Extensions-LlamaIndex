@@ -111,7 +111,7 @@ with st.sidebar:
 
 #nodes=index.docstore.docs.values()
 
-indexPath_2000=r"llamaindex_entities_0.2"
+indexPath_2000=r"index/2000/text_embedding_ada_002"
 documentsPath_2000=r"Text_Files_Old"
 index_2000=indexgenerator(indexPath_2000,documentsPath_2000)
 vector_retriever_2000 = VectorIndexRetriever(index=index_2000,similarity_top_k=2)
@@ -178,7 +178,7 @@ def get_response(prompt):
         st.session_state.messages.append(message)     
         response_list = [response, prompt , scores]  
         df = pd.read_csv('logs/conversation_log.csv')
-        new_row = {'Question': str(prompt), 'Answer': response,'Rouge_Score' : scores}
+        new_row = {'Question': str(prompt), 'Answer': response,'Unigram_Recall' : scores[0]["rouge-1"]["r"],'Unigram_Precision' : scores[0]["rouge-1"]["p"],'Bigram_Recall' : scores[0]["rouge-2"]["r"],'Bigram_Precision' : scores[0]["rouge-2"]["r"]}
         df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
         df.to_csv('logs/conversation_logs.csv', index=False)
         bucket = 'aiex' # already created on S3
@@ -194,9 +194,9 @@ def get_response(prompt):
         st.session_state.messages.append(message)
         response_list = [response.response , prompt , scores]
         df = pd.read_csv('logs/conversation_logs.csv')
-        new_row = {'Question': str(prompt), 'Answer': response.response,'Rouge_Score' : scores}
+        new_row = {'Question': str(prompt), 'Answer': response.response,'Unigram_Recall' : scores[0]["rouge-1"]["r"],'Unigram_Precision' : scores[0]["rouge-1"]["p"],'Bigram_Recall' : scores[0]["rouge-2"]["r"],'Bigram_Precision' : scores[0]["rouge-2"]["r"]}
         df = pd.concat([df, pd.DataFrame(new_row, index=[0])], ignore_index=True)
-        df.to_csv('logs/conversation_log.csv', index=False)
+        df.to_csv('logs/conversation_logs.csv', index=False)
         bucket = 'aiex' # already created on S3
         csv_buffer = StringIO()
         df.to_csv(csv_buffer)
@@ -224,8 +224,6 @@ if st.session_state.messages[-1]["role"] != "assistant":
         
 
 
-                                #s3_resource= boto3.resource('s3',aws_access_key_id=os.environ["ACCESS_ID"],aws_secret_access_key= os.environ["ACCESS_KEY"])
-                            #s3_resource.Object(bucket, 'conversation_log.csv').put(Body=csv_buffer.getvalue())
                         
 myargs = [
     "Made in India",""
