@@ -211,7 +211,7 @@ def answer_question(question,):
          #   model=model,
         #)
       
-        return ans #response["choices"][0]["text"].strip()
+        return ans , joined_text #response["choices"][0]["text"].strip()
     except Exception as e:
         print(e)
         return ""
