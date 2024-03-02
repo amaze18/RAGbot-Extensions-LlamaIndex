@@ -11,13 +11,13 @@ import openai
 import os
 from index import indexgenerator
 
-st.set_page_config(page_title="Chat with the Streamlit docs, powered by LlamaIndex", page_icon="🦙", layout="centered", initial_sidebar_state="auto", menu_items=None)
+st.set_page_config(page_title="Chat with a book, powered by AIXplorers", page_icon="🦙", layout="centered", initial_sidebar_state="auto", menu_items=None)
 openai.api_key = os.environ['SECRET_TOKEN']
-st.title("Chat with a large pdf, powered by LlamaIndex 💬🦙")
+st.title("Chat with FinTech for Billions, powered by AIXplorers 💬")
          
 if "messages" not in st.session_state.keys(): # Initialize the chat messages history
     st.session_state.messages = [
-        {"role": "assistant", "content": "Ask me a question the large pdf!"}
+        {"role": "assistant", "content": "Ask me a question tfrom the book!"}
     ]
 
 indexPath=r"large_pdf_index"
