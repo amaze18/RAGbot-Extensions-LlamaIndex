@@ -13,7 +13,7 @@ from index import indexgenerator
 
 st.set_page_config(page_title="Chat with a book, powered by AIXplorers", page_icon="🦙", layout="centered", initial_sidebar_state="auto", menu_items=None)
 openai.api_key = os.environ['SECRET_TOKEN']
-st.title("Chat with FinTech for Billions, powered by AIXplorers 💬")
+st.title("Chat with FinTech for Billions, powered by [AIXplorers](https://anupam-purwar.github.io/page/research_group.html)!' 💬")
          
 if "messages" not in st.session_state.keys(): # Initialize the chat messages history
     st.session_state.messages = [
