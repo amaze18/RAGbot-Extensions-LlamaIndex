@@ -28,8 +28,8 @@ bm25_retriever = BM25Retriever.from_defaults(index=index, similarity_top_k=2)
 postprocessor = LongContextReorder()
 class HybridRetriever(BaseRetriever):
     def __init__(self,vector_retriever, bm25_retriever):
-        self.vector_retriever_2000 = vector_retriever_2000
-        self.bm25_retriever_2000 = bm25_retriever_2000
+        self.vector_retriever_2000 = vector_retriever
+        self.bm25_retriever_2000 = bm25_retriever
         super().__init__()
 
     def _retrieve(self, query, **kwargs):
