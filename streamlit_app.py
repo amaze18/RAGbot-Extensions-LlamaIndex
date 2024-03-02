@@ -20,7 +20,7 @@ if "messages" not in st.session_state.keys(): # Initialize the chat messages his
         {"role": "assistant", "content": "Ask me a question the large pdf!"}
     ]
 
-indexPath=r"C:\Users\Kush Juvekar\Desktop\large_pdf\large_pdf_index"
+indexPath=r"large_pdf_index"
 documentsPath=r"FinTech for Billions - Bhagwan Chowdhry & Syed Anas Ahmed.pdf"
 index=indexgenerator(indexPath,documentsPath)
 vector_retriever_2000 = VectorIndexRetriever(index=index,similarity_top_k=2)
