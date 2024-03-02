@@ -41,3 +41,4 @@ faiss-cpu
 unstructured
 htbuilder
 rouge
+nltk
