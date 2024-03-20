@@ -23,6 +23,7 @@ from create_context import answer_question
 from llama_index.legacy.memory import ChatMemoryBuffer
 from llama_index.legacy.retrievers import BM25Retriever
 from llama_index.legacy.retrievers import VectorIndexRetriever
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
 from llama_index.legacy.schema import QueryBundle
 from llama_index.legacy.schema import MetadataMode
 from llama_index.legacy.postprocessor import LongContextReorder 
@@ -92,8 +93,7 @@ def layout(*args):
 
 
 
-SECRET_TOKEN = os.environ["SECRET_TOKEN"]
-openai.api_key = SECRET_TOKEN
+openai.api_key =os.environ['SECRET_TOKEN']
 
 # App title
 st.set_page_config(page_title="🤗💬 I-Venture @ ISB AI-Chat Bot")
@@ -111,7 +111,7 @@ with st.sidebar:
 
 #nodes=index.docstore.docs.values()
 
-indexPath_2000=r"index/2000/text_embedding_ada_002"
+indexPath_2000=r"llamaindex_entities_0.2"
 documentsPath_2000=r"Text_Files_Old"
 index_2000=indexgenerator(indexPath_2000,documentsPath_2000)
 vector_retriever_2000 = VectorIndexRetriever(index=index_2000,similarity_top_k=2)
@@ -151,17 +151,25 @@ background-size: cover;
 memory=ChatMemoryBuffer.from_defaults(token_limit=3900)
 rouge = Rouge()
 
+condense_prompt = (
+  "Given the following conversation between a user and an AI assistant and a follow up question from user,"
+  "rephrase the follow up question to be a standalone question.\n"
+  "Chat History:\n"
+  "{chat_history}"
+  "\nFollow Up Input: {question}"
+  "\nStandalone question:")
+
 context_prompt=(
         "You are a helpful and friendly chatbot who addresses queries in detail regarding I-Venture @ ISB."
         "Here are the relevant documents for the context:\n"
         "{context_str}"
         "\nInstruction: Use the previous chat history above and context, to interact and help the user. Never give any kinds of links, email addresses or contact numbers in the answer."
         )
-def get_response(prompt):
+def get_response(prompt,message_history):
     llm = OpenAI(model="gpt-3.5-turbo")
     service_context = ServiceContext.from_defaults(llm=llm)
-    query_engine=RetrieverQueryEngine.from_args(retriever=hybrid_retriever,service_context=service_context,verbose=True)
-    chat_engine=CondensePlusContextChatEngine.from_defaults(query_engine,memory=memory,context_prompt=context_prompt)
+    #query_engine=RetrieverQueryEngine.from_args(retriever=hybrid_retriever,service_context=service_context,verbose=True)
+    chat_engine=CondensePlusContextChatEngine.from_defaults(retriever=hybrid_retriever,service_context=service_context,chat_history=message_history,context_prompt=context_prompt,condense_prompt=condense_prompt)
     nodes = hybrid_retriever.retrieve(prompt.lower())
     response = chat_engine.chat(str(prompt.lower()))
     validating_prompt = ("""You are an intelligent bot designed to assist users on an organization's website by answering their queries. You'll be given a user's question and an associated answer. Your task is to determine if the provided answer effectively resolves the query. If the answer is unsatisfactory, return 0.\n
@@ -175,7 +183,8 @@ def get_response(prompt):
         response , joined_text=answer_question(prompt.lower())
         scores = rouge.get_scores(response, joined_text)
         message = {"role": "assistant", "content": response}
-        st.session_state.messages.append(message)     
+        st.session_state.messages.append(message)
+        message_history.append(ChatMessage(role=MessageRole.ASSISTANT,content=str(response)),)
         response_list = [response, prompt , scores]  
         df = pd.read_csv('logs/conversation_log.csv')
         new_row = {'Question': str(prompt), 'Answer': response,'Unigram_Recall' : scores[0]["rouge-1"]["r"],'Unigram_Precision' : scores[0]["rouge-1"]["p"],'Bigram_Recall' : scores[0]["rouge-2"]["r"],'Bigram_Precision' : scores[0]["rouge-2"]["r"]}
@@ -184,14 +193,15 @@ def get_response(prompt):
         bucket = 'aiex' # already created on S3
         csv_buffer = StringIO()
         df.to_csv(csv_buffer)
-        s3_resource= boto3.resource('s3',aws_access_key_id=os.environ["ACCESS_ID"],aws_secret_access_key= os.environ["ACCESS_KEY"])
-        s3_resource.Object(bucket, 'conversation_log.csv').put(Body=csv_buffer.getvalue())
-        return response_list                                     
+        s3_resource= boto3.resource('s3',aws_access_key_id=os.environ['ACCESS_ID'],aws_secret_access_key= os.environ['ACCESS_KEY'])
+        s3_resource.Object(bucket, 'conversation_log.csv').put(Body=csv_buffer.getvalue())  
+        return response_list                                 
     else:
         context_str = "\n\n".join([n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes])
         scores=rouge.get_scores(response.response,context_str)
         message = {"role": "assistant", "content": response.response}
         st.session_state.messages.append(message)
+        message_history.append(ChatMessage(role=MessageRole.ASSISTANT,content=str(response.response)),)
         response_list = [response.response , prompt , scores]
         df = pd.read_csv('logs/conversation_logs.csv')
         new_row = {'Question': str(prompt), 'Answer': response.response,'Unigram_Recall' : scores[0]["rouge-1"]["r"],'Unigram_Precision' : scores[0]["rouge-1"]["p"],'Bigram_Recall' : scores[0]["rouge-2"]["r"],'Bigram_Precision' : scores[0]["rouge-2"]["r"]}
@@ -200,25 +210,28 @@ def get_response(prompt):
         bucket = 'aiex' # already created on S3
         csv_buffer = StringIO()
         df.to_csv(csv_buffer)
-        s3_resource= boto3.resource('s3',aws_access_key_id=os.environ['ACCESS_ID'],aws_secret_access_key= os.environ['ACCESS_KEY'])
+        s3_resource= boto3.resource('s3',aws_access_key_id=os.environ['ACCESS_ID'],aws_secret_access_key=os.environ['ACCESS_KEY'])
         s3_resource.Object(bucket, 'conversation_log.csv').put(Body=csv_buffer.getvalue())
-        return response_list
+        return response_list 
 
 if "messages" not in st.session_state.keys(): # Initialize the chat message history
-    st.session_state.messages = [{"role": "assistant", "content": "Let me know about your grievance!"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Ask anything about I-Venture @ ISB!"}]
+if "message_history" not in st.session_state.keys():
+    st.session_state.message_history=[ChatMessage(role=MessageRole.ASSISTANT,content="Ask anything aboug I-Venture @ ISB."),]
 if prompt := st.chat_input("Your question"): # Prompt for user input and save to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.message_history.append(ChatMessage(role=MessageRole.USER,content=str(prompt)))
+
 for message in st.session_state.messages: # Display the prior chat messages
     with st.chat_message(message["role"]):
         st.write(message["content"])
 # If last message is not from assistant, generate a new response
 if st.session_state.messages[-1]["role"] != "assistant":
-    with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            response = get_response(prompt)
-            st.write(response[0])
-            message = {"role": "assistant", "content": response[0]}
-            st.session_state.messages.append(message) # Add response to message history
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                response = get_response(prompt=prompt,message_history=st.session_state.message_history)
+                st.write(response[0])
+
 
 
         
